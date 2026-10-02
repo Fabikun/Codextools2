@@ -1,20 +1,21 @@
-# Reel 1080x1920, 5 s. Screen drops on each punch (synced to the hit sounds); a word is revealed per hit.
+# Reel 1080x1920, 6 s. Screen drops on each punch (synced to the hit sounds); a word is revealed per hit.
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np, os, math, random
-S=3; W,H=360*S,640*S; FPS=30; N=150
+S=3; W,H=360*S,640*S; FPS=30; N=180
 F='/root/.fonts/'
 def font(name,size): return ImageFont.truetype(F+name,int(size*S))
 bold=font('Poppins-Bold.ttf',40); semi=font('Poppins-SemiBold.ttf',12)
-logo_f=font('Poppins-Bold.ttf',16); ph_f=font('Poppins-SemiBold.ttf',17); stk_f=font('Poppins-Bold.ttf',22)
+logo_f=font('Poppins-Bold.ttf',16); ph_f=font('Poppins-SemiBold.ttf',16); cd_f=font('Poppins-Bold.ttf',22); stk_f=font('Poppins-Bold.ttf',22)
 cav=ImageFont.truetype(F+'Caveat-Var.ttf',46*S)
 try: cav.set_variation_by_axes([700])
 except Exception: pass
 LIME=(158,232,79); AMBER=(240,194,127); WHITE=(255,255,255); DARK=(10,13,11)
 
 # timeline: src 10..135 then cut to 142..165 (skips the frames where the old title moves over the screen)
-seq=list(range(10,136))+list(range(142,166))
+B=list(range(144,166))
+seq=list(range(10,136))+[B[min(len(B)-1,i//2)] for i in range(N-126)]  # after hit 3: half speed, then hold
 HITS=[62,93,126]           # output frames of the punch sounds (src 72,103,136)
-STOPS=[120,166,250,352]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
+STOPS=[120,166,250,364]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
 words=[('aprende',bold,WHITE,122),('soporte',bold,WHITE,164),('respiratorio',bold,LIME,206),('sin complicarte',cav,AMBER,244)]
 X0=24
 def eout(x): x=min(max(x,0),1); return 1-(1-x)**3
@@ -67,16 +68,15 @@ for k in range(N):
     im.paste(crop,(int(shake[0]*S),int((sy+shake[1])*S)))
     # phrase pointing to Meta's own CTA button (revealed by hit 3, drawn over the screen's clearance)
     if k>=HITS[2]+5:
-        p=eout((k-HITS[2]-5)/6); al=int(255*p); py=324+8*(1-p)
+        p=eout((k-HITS[2]-5)/6); al=int(255*p); py=320+8*(1-p)
         lay=Image.new('RGBA',(W,H),(0,0,0,0)); ld=ImageDraw.Draw(lay)
-        a1='toca '; a2='más información'
-        ld.text((X0*S,py*S),a1,font=ph_f,fill=WHITE+(al,),anchor='lm')
-        x2=X0*S+ld.textlength(a1,font=ph_f)
-        ld.text((x2,py*S),a2,font=ph_f,fill=LIME+(al,),anchor='lm')
-        ax=(x2+ld.textlength(a2,font=ph_f))/S+12; bob=3*math.sin((k-HITS[2])/FPS*2*math.pi*2.2)
-        ay=py+bob
-        ld.line([(ax*S,(ay-9)*S),(ax*S,(ay+7)*S)],fill=LIME+(al,),width=3*S)
-        ld.polygon([((ax-6)*S,(ay+2)*S),((ax+6)*S,(ay+2)*S),(ax*S,(ay+10)*S)],fill=LIME+(al,))
+        ld.text((X0*S,py*S),'es cyber day',font=cd_f,fill=LIME+(al,),anchor='lm')
+        p2=eout((k-HITS[2]-11)/6); al2=int(255*p2); py2=py+27+6*(1-p2)
+        t2='toca más información'
+        ld.text((X0*S,py2*S),t2,font=ph_f,fill=WHITE+(al2,),anchor='lm')
+        ax=X0+ld.textlength(t2,font=ph_f)/S+12; ay=py2+3*math.sin((k-HITS[2])/FPS*2*math.pi*2.2)
+        ld.line([(ax*S,(ay-9)*S),(ax*S,(ay+7)*S)],fill=LIME+(al2,),width=3*S)
+        ld.polygon([((ax-6)*S,(ay+2)*S),((ax+6)*S,(ay+2)*S),(ax*S,(ay+10)*S)],fill=LIME+(al2,))
         im.paste(lay,(0,0),lay)
     im.save('out2/%03d.png'%k)
 print('ok')
