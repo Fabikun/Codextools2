@@ -14,7 +14,7 @@ LIME=(158,232,79); AMBER=(240,194,127); WHITE=(255,255,255); DARK=(10,13,11)
 # timeline: src 10..135 then cut to 142..165 (skips the frames where the old title moves over the screen)
 seq=list(range(10,136))+list(range(142,166))
 HITS=[62,93,126]           # output frames of the punch sounds (src 72,103,136)
-STOPS=[166,208,250,352]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
+STOPS=[120,166,250,352]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
 words=[('aprende',bold,WHITE,122),('soporte',bold,WHITE,164),('respiratorio',bold,LIME,206),('sin complicarte',cav,AMBER,244)]
 X0=24
 def eout(x): x=min(max(x,0),1); return 1-(1-x)**3
@@ -33,16 +33,9 @@ for k in range(N):
     if last is not None and k-last<8:
         amp=5*(1-(k-last)/8); shake=(random.uniform(-amp,amp),random.uniform(-amp,amp))
     im=Image.new('RGB',(W,H),(0,0,0)); d=ImageDraw.Draw(im)
-    # header (below reels top UI)
-    cx,cy=X0+8,100; r=7
-    d.polygon([(cx*S,(cy-r)*S),((cx+r)*S,cy*S),(cx*S,(cy+r)*S),((cx-r)*S,cy*S)],outline=LIME,width=3)
-    d.text(((cx+15)*S,cy*S),'CODEX',font=logo_f,fill=WHITE,anchor='lm')
-    ls=4*S; chars=list('CYBER DAY'); ws=[d.textlength(c,font=semi) for c in chars]
-    x=(360-24)*S-(sum(ws)+ls*(len(chars)-1)); pul=0.75+0.25*math.sin(k/FPS*6)
-    for c,w in zip(chars,ws): d.text((x,cy*S),c,font=semi,fill=tuple(int(v*pul) for v in LIME),anchor='lm'); x+=w+ls
     # words: drawn behind the screen; each pops in when the screen uncovers it
     for i,(txt,f,col,y) in enumerate(words):
-        start=0 if i==0 else HITS[i-1]+1
+        start=[HITS[0],HITS[1],HITS[1]+3,HITS[2]][i]+1
         if k<start: continue
         p=eout((k-start)/6); sc=1.12-0.12*p
         lay=Image.new('RGBA',(W,H),(0,0,0,0)); ld=ImageDraw.Draw(lay)
