@@ -1,6 +1,7 @@
 # Reel 1080x1920, 6 s. Screen drops on each punch (synced to the hit sounds); a word is revealed per hit.
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np, os, math, random
+from clean import clean_arr  # removes the old burned-in title from the monitor
 S=3; W,H=360*S,640*S; FPS=30; N=180
 F='/root/.fonts/'
 def font(name,size): return ImageFont.truetype(F+name,int(size*S))
@@ -12,8 +13,7 @@ except Exception: pass
 LIME=(158,232,79); AMBER=(240,194,127); WHITE=(255,255,255); DARK=(10,13,11)
 
 # timeline: src 10..135 then cut to 142..165 (skips the frames where the old title moves over the screen)
-B=list(range(144,166))
-seq=list(range(10,136))+[B[min(len(B)-1,i//2)] for i in range(N-126)]  # after hit 3: half speed, then hold
+seq=list(range(10,136))+[136+i//2 for i in range(N-126)]  # after hit 3: half speed
 HITS=[62,93,126]           # output frames of the punch sounds (src 72,103,136)
 STOPS=[120,166,250,364]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
 words=[('aprende',bold,WHITE,122),('soporte',bold,WHITE,164),('respiratorio',bold,LIME,206),('sin complicarte',cav,AMBER,244)]
@@ -53,18 +53,8 @@ for k in range(N):
     a=np.array(Image.open('src/%03d.png'%sf).convert('RGB')); top=src_top(a.mean(2))
     c=np.zeros((188,360,3),np.uint8); part=a[top:top+188,0:360]; c[:part.shape[0]]=part
     c[:22,276:]=0
+    if 106<=sf<=143: c[:100]=clean_arr(c[:100])
     crop=Image.fromarray(c).resize((360*S,188*S),Image.LANCZOS)
-    # sticker over the old burned-in title (src 103..135), slams in with hit 2
-    if 103<=sf<=135:
-        p=eout((sf-103)/3)
-        sw,sh=150,58
-        st=Image.new('RGBA',(sw*S,sh*S),(0,0,0,0)); sd=ImageDraw.Draw(st)
-        sd.rounded_rectangle([0,0,sw*S-1,sh*S-1],radius=10*S,fill=LIME)
-        sd.text((sw*S/2,sh*S/2),'cyber day',font=stk_f,fill=DARK,anchor='mm')
-        sc=1.6-0.6*p
-        st=st.resize((int(sw*S*sc),int(sh*S*sc)),Image.BICUBIC).rotate(-5,expand=True,resample=Image.BICUBIC)
-        cx2,cy2=175*S,40*S
-        crop.paste(st,(int(cx2-st.width/2),int(cy2-st.height/2)),st)
     im.paste(crop,(int(shake[0]*S),int((sy+shake[1])*S)))
     # phrase pointing to Meta's own CTA button (revealed by hit 3, drawn over the screen's clearance)
     if k>=HITS[2]+5:
