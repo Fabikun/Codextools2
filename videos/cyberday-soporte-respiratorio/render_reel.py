@@ -4,9 +4,9 @@ import numpy as np, os, math, random
 S=3; W,H=360*S,640*S; FPS=30; N=150
 F='/root/.fonts/'
 def font(name,size): return ImageFont.truetype(F+name,int(size*S))
-bold=font('Poppins-Bold.ttf',44); semi=font('Poppins-SemiBold.ttf',12)
-logo_f=font('Poppins-Bold.ttf',16); btn_f=font('Poppins-Bold.ttf',17); stk_f=font('Poppins-Bold.ttf',22)
-cav=ImageFont.truetype(F+'Caveat-Var.ttf',50*S)
+bold=font('Poppins-Bold.ttf',40); semi=font('Poppins-SemiBold.ttf',12)
+logo_f=font('Poppins-Bold.ttf',16); ph_f=font('Poppins-SemiBold.ttf',17); stk_f=font('Poppins-Bold.ttf',22)
+cav=ImageFont.truetype(F+'Caveat-Var.ttf',46*S)
 try: cav.set_variation_by_axes([700])
 except Exception: pass
 LIME=(158,232,79); AMBER=(240,194,127); WHITE=(255,255,255); DARK=(10,13,11)
@@ -14,8 +14,8 @@ LIME=(158,232,79); AMBER=(240,194,127); WHITE=(255,255,255); DARK=(10,13,11)
 # timeline: src 10..135 then cut to 142..165 (skips the frames where the old title moves over the screen)
 seq=list(range(10,136))+list(range(142,166))
 HITS=[62,93,126]           # output frames of the punch sounds (src 72,103,136)
-STOPS=[150,198,246,300]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
-words=[('aprende',bold,WHITE,98),('soporte',bold,WHITE,146),('respiratorio',bold,LIME,194),('sin complicarte',cav,AMBER,240)]
+STOPS=[166,208,250,352]    # screen top (in 360x640 units) before hit1, after hit1, hit2, hit3
+words=[('aprende',bold,WHITE,122),('soporte',bold,WHITE,164),('respiratorio',bold,LIME,206),('sin complicarte',cav,AMBER,244)]
 X0=24
 def eout(x): x=min(max(x,0),1); return 1-(1-x)**3
 def eback(x):
@@ -34,7 +34,7 @@ for k in range(N):
         amp=5*(1-(k-last)/8); shake=(random.uniform(-amp,amp),random.uniform(-amp,amp))
     im=Image.new('RGB',(W,H),(0,0,0)); d=ImageDraw.Draw(im)
     # header (below reels top UI)
-    cx,cy=X0+8,62; r=7
+    cx,cy=X0+8,100; r=7
     d.polygon([(cx*S,(cy-r)*S),((cx+r)*S,cy*S),(cx*S,(cy+r)*S),((cx-r)*S,cy*S)],outline=LIME,width=3)
     d.text(((cx+15)*S,cy*S),'CODEX',font=logo_f,fill=WHITE,anchor='lm')
     ls=4*S; chars=list('CYBER DAY'); ws=[d.textlength(c,font=semi) for c in chars]
@@ -53,7 +53,7 @@ for k in range(N):
         im.paste(lay,(0,0),lay)
         if i==3:
             L=d.textlength(txt,font=f)*eout((k-start-3)/10)
-            if L>0: d.line([(X0*S,(y+60)*S),(X0*S+L,(y+58)*S)],fill=AMBER,width=3*S)
+            if L>0: d.line([(X0*S,(y+52)*S),(X0*S+L,(y+50)*S)],fill=AMBER,width=3*S)
     # screen
     sf=seq[k]
     a=np.array(Image.open('src/%03d.png'%sf).convert('RGB')); top=src_top(a.mean(2))
@@ -72,17 +72,18 @@ for k in range(N):
         cx2,cy2=175*S,40*S
         crop.paste(st,(int(cx2-st.width/2),int(cy2-st.height/2)),st)
     im.paste(crop,(int(shake[0]*S),int((sy+shake[1])*S)))
-    # CTA after hit 3
-    if k>=HITS[2]:
-        d=ImageDraw.Draw(im); p=eout((k-HITS[2])/6)
+    # phrase pointing to Meta's own CTA button (revealed by hit 3, drawn over the screen's clearance)
+    if k>=HITS[2]+5:
+        p=eout((k-HITS[2]-5)/6); al=int(255*p); py=324+8*(1-p)
         lay=Image.new('RGBA',(W,H),(0,0,0,0)); ld=ImageDraw.Draw(lay)
-        bw,bh=250,46; bx=(360-bw)/2; by=500+16*(1-p); al=int(255*p)
-        ld.rounded_rectangle([bx*S,by*S,(bx+bw)*S,(by+bh)*S],radius=10*S,fill=LIME+(al,))
-        tw=ld.textlength('cyber day codex',font=btn_f)/S
-        tx=bx+(bw-tw-16)/2
-        ld.text((tx*S,(by+bh/2)*S),'cyber day codex',font=btn_f,fill=DARK+(al,),anchor='lm')
-        ax=tx+tw+8; ay=by+bh/2
-        ld.polygon([(ax*S,(ay-6)*S),((ax+9)*S,ay*S),(ax*S,(ay+6)*S)],fill=DARK+(al,))
+        a1='toca '; a2='más información'
+        ld.text((X0*S,py*S),a1,font=ph_f,fill=WHITE+(al,),anchor='lm')
+        x2=X0*S+ld.textlength(a1,font=ph_f)
+        ld.text((x2,py*S),a2,font=ph_f,fill=LIME+(al,),anchor='lm')
+        ax=(x2+ld.textlength(a2,font=ph_f))/S+12; bob=3*math.sin((k-HITS[2])/FPS*2*math.pi*2.2)
+        ay=py+bob
+        ld.line([(ax*S,(ay-9)*S),(ax*S,(ay+7)*S)],fill=LIME+(al,),width=3*S)
+        ld.polygon([((ax-6)*S,(ay+2)*S),((ax+6)*S,(ay+2)*S),(ax*S,(ay+10)*S)],fill=LIME+(al,))
         im.paste(lay,(0,0),lay)
     im.save('out2/%03d.png'%k)
 print('ok')
