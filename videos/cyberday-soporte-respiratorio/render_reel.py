@@ -72,9 +72,6 @@ for k in range(N):
         cx2,cy2=175*S,40*S
         crop.paste(st,(int(cx2-st.width/2),int(cy2-st.height/2)),st)
     im.paste(crop,(int(shake[0]*S),int((sy+shake[1])*S)))
-    # flash on impact
-    if last is not None and k-last<4:
-        fl=Image.new('RGB',(W,H),WHITE); im=Image.blend(im,fl,0.22*(1-(k-last)/4))
     # CTA after hit 3
     if k>=HITS[2]:
         d=ImageDraw.Draw(im); p=eout((k-HITS[2])/6)
